@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ENEM // Cronograma & To-Do</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e4e4e7' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E" />
+  <meta name="description" content="To-Do List minimalista para a Reta Final do ENEM. Importe seu cronograma gerado por IA com horas estimadas e dias." />
+
+  <!-- Tipografia Editorial Limpa: Inter / Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <!-- HEADER MINIMALISTA -->
+    <header class="top-nav">
+      <div class="brand-group">
+        <h1 class="brand-title">Reta Final ENEM</h1>
+        <span class="brand-subtitle" id="summary-inline-text">Carregando cronograma...</span>
+      </div>
+
+      <div class="nav-actions">
+        <button type="button" id="btn-open-prompt" class="btn btn-subtle" title="Copiar comando pronto para mandar ao ChatGPT, Claude ou Gemini">
+          Prompt IA
+        </button>
+
+        <button type="button" id="btn-open-import" class="btn btn-primary" title="Colar o cronograma gerado pela IA">
+          Importar da IA
+        </button>
+
+        <button type="button" id="btn-toggle-quick-add" class="btn btn-icon" title="Adicionar tarefa manual" aria-label="Adicionar tarefa manual" aria-expanded="false">
+          +
+        </button>
+
+        <button type="button" id="btn-undo-backup" class="btn btn-ghost" hidden title="Desfazer última importação ou limpeza">
+          Desfazer
+        </button>
+
+        <button type="button" id="btn-toggle-sound" class="btn btn-ghost btn-icon" aria-label="Alternar som" title="Alternar som tátil">
+          <span id="sound-icon-wrap">🔊</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- BARRA DE PROGRESSO FINA & CONTADORES TABULARES -->
+    <section class="minimal-progress-section" aria-label="Progresso geral">
+      <div class="minimal-stats-row">
+        <div class="minimal-stats-left">
+          <span id="kpi-tasks-done" class="stat-strong">0/0</span>
+          <span class="stat-muted">blocos</span>
+          <span class="stat-sep">·</span>
+          <span id="kpi-hours-done" class="stat-strong">0h</span>
+          <span id="kpi-hours-total" class="stat-muted">de 0h</span>
+        </div>
+        <div class="minimal-stats-right">
+          <span id="kpi-hours-remaining" class="stat-muted">0h restantes</span>
+          <span class="stat-sep">·</span>
+          <span id="kpi-percent-badge" class="stat-mono">0%</span>
+        </div>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="kpi-tasks-progressbar">
+        <div id="kpi-tasks-bar" class="progress-fill" style="width: 0%;"></div>
+      </div>
+    </section>
+
+    <!-- FORMULÁRIO DE ADIÇÃO MANUAL (COLAPSADO POR PADRÃO PARA MANTER MINIMALISMO) -->
+    <section id="quick-add-card" class="quick-add-card" hidden aria-label="Adicionar bloco manual">
+      <form id="quick-add-form" class="quick-add-form">
+        <input
+          type="text"
+          id="qa-dia"
+          class="input-field"
+          placeholder="Dia (ex: Dia 01 • Segunda)"
+          required
+          aria-label="Dia para ser feito"
+        />
+        <select id="qa-materia" class="select-field" aria-label="Área ou Matéria">
+          <option value="Matemática">Matemática</option>
+          <option value="Natureza">Natureza</option>
+          <option value="Humanas">Humanas</option>
+          <option value="Linguagens">Linguagens</option>
+          <option value="Redação">Redação</option>
+          <option value="Simulado">Simulado</option>
+        </select>
+        <input
+          type="text"
+          id="qa-assunto"
+          class="input-field"
+          placeholder="Assunto (ex: Eletrodinâmica e Resistores)"
+          required
+          aria-label="Assunto do estudo"
+        />
+        <input
+          type="number"
+          id="qa-horas"
+          class="input-field"
+          placeholder="Horas"
+          step="0.25"
+          min="0.25"
+          max="12"
+          value="1.5"
+          required
+          aria-label="Horas estimadas"
+        />
+        <select id="qa-prioridade" class="select-field" aria-label="Prioridade">
+          <option value="alta">Alta</option>
+          <option value="media" selected>Média</option>
+          <option value="baixa">Baixa</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </form>
+    </section>
+
+    <!-- FILTROS MINIMALISTAS EM LINHA ÚNICA -->
+    <section class="filters-bar" aria-label="Filtros">
+      <div class="filter-pills" role="group" aria-label="Filtrar por Área">
+        <button type="button" class="pill-btn active" data-area="all">Todas</button>
+        <button type="button" class="pill-btn" data-area="Matemática">Matemática</button>
+        <button type="button" class="pill-btn" data-area="Natureza">Natureza</button>
+        <button type="button" class="pill-btn" data-area="Humanas">Humanas</button>
+        <button type="button" class="pill-btn" data-area="Linguagens">Linguagens</button>
+        <button type="button" class="pill-btn" data-area="Redação">Redação</button>
+        <button type="button" class="pill-btn" data-area="Simulado">Simulado</button>
+      </div>
+
+      <div class="filter-controls-right">
+        <select id="filter-day" class="select-field select-compact" aria-label="Filtrar por Dia">
+          <option value="all">Todos os dias</option>
+        </select>
+
+        <select id="filter-status" class="select-field select-compact" aria-label="Filtrar por Status">
+          <option value="all">Todos</option>
+          <option value="pending">Pendentes</option>
+          <option value="done">Concluídos</option>
+        </select>
+
+        <input
+          type="search"
+          id="filter-search"
+          class="input-field input-compact"
+          placeholder="Buscar..."
+          aria-label="Buscar assunto"
+        />
+
+        <button type="button" id="btn-clear-done" class="btn btn-ghost btn-sm" title="Remover tarefas já concluídas">
+          Limpar feitas
+        </button>
+      </div>
+    </section>
+
+    <!-- LISTA DE DIAS (Dias concluídos vão automaticamente para o final) -->
+    <section id="days-container" class="days-container" tabindex="-1" aria-live="polite"></section>
+  </main>
+
+  <!-- ========================================================================
+       MODAL 1: IMPORTAR CRONOGRAMA DA IA (<dialog closedby="any">)
+       ======================================================================== -->
+  <dialog id="dialog-import" class="studio-dialog" closedby="any" aria-labelledby="dialog-import-title">
+    <div class="dialog-header">
+      <h2 id="dialog-import-title" class="dialog-title">Importar Cronograma da IA</h2>
+      <form method="dialog">
+        <button type="submit" class="btn btn-ghost btn-icon" aria-label="Fechar">✕</button>
+      </form>
+    </div>
+
+    <div class="dialog-body">
+      <div class="dialog-top-hint">
+        <span>Cole o JSON, Tabela ou Lista gerada pelo ChatGPT, Claude ou Gemini.</span>
+        <button type="button" id="btn-fill-sample" class="btn btn-subtle btn-sm">
+          Preencher exemplo
+        </button>
+      </div>
+
+      <textarea
+        id="import-textarea"
+        class="textarea-field"
+        rows="9"
+        placeholder='Cole aqui a resposta da IA...&#10;&#10;Exemplo em texto:&#10;Dia 01 • Segunda:&#10;- [Matemática] Geometria Espacial - 2h (Alta)&#10;- [Biologia] Ecologia - 1.5h (Alta)&#10;&#10;Ou cole o JSON gerado com o botão "Prompt IA".'
+        aria-label="Texto ou JSON do cronograma gerado pela IA"
+      ></textarea>
+
+      <div id="import-preview-box" class="import-preview-box">
+        <div>
+          <strong id="import-preview-status">Aguardando colar o cronograma...</strong>
+          <div id="import-preview-details" class="preview-sub">
+            Reconhece horas estimadas, dias, matérias e prioridades automaticamente.
+          </div>
+        </div>
+        <span id="import-format-badge" class="badge-minimal" style="display: none;">JSON</span>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="import-mode" value="replace" checked />
+          <span>Substituir lista</span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="import-mode" value="append" />
+          <span>Adicionar à atual</span>
+        </label>
+      </div>
+
+      <div class="dialog-actions">
+        <form method="dialog">
+          <button type="submit" class="btn btn-ghost">Cancelar</button>
+        </form>
+        <button type="button" id="btn-confirm-import" class="btn btn-primary" disabled>
+          Importar
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ========================================================================
+       MODAL 2: GERADOR DE PROMPT PARA A IA (<dialog closedby="any">)
+       ======================================================================== -->
+  <dialog id="dialog-prompt" class="studio-dialog" closedby="any" aria-labelledby="dialog-prompt-title">
+    <div class="dialog-header">
+      <h2 id="dialog-prompt-title" class="dialog-title">Prompt para sua IA</h2>
+      <form method="dialog">
+        <button type="submit" class="btn btn-ghost btn-icon" aria-label="Fechar">✕</button>
+      </form>
+    </div>
+
+    <div class="dialog-body">
+      <p class="dialog-desc">
+        Configure abaixo, copie o comando e envie para sua IA preferida. Depois cole a resposta dela em <strong>Importar da IA</strong>.
+      </p>
+
+      <div class="prompt-grid">
+        <div>
+          <label for="prompt-dias" class="field-label">Dias</label>
+          <input type="number" id="prompt-dias" class="input-field" value="7" min="1" max="60" />
+        </div>
+        <div>
+          <label for="prompt-horas" class="field-label">Horas / dia</label>
+          <input type="number" id="prompt-horas" class="input-field" value="4.5" step="0.5" min="1" max="16" />
+        </div>
+        <div>
+          <label for="prompt-foco" class="field-label">Foco / Pesos</label>
+          <select id="prompt-foco" class="select-field">
+            <option value="Geral Equilibrado (Foco TRI Matemática + Redação + Natureza)">Geral Equilibrado (TRI)</option>
+            <option value="Medicina / Saúde (Peso Máximo em Natureza, Redação e Matemática)">Medicina / Saúde</option>
+            <option value="Engenharias / TI / Exatas (Peso Máximo em Matemática, Física e Redação)">Engenharias / Exatas</option>
+            <option value="Direito / Humanas (Peso Máximo em Humanas, Linguagens e Redação)">Direito / Humanas</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="prompt-rascunho" class="field-label">
+          Seus conteúdos ou rascunho de matérias (opcional)
+        </label>
+        <textarea
+          id="prompt-rascunho"
+          class="textarea-field"
+          rows="2"
+          placeholder="Ex: Preciso revisar Eletrodinâmica, Estequiometria, Era Vargas, Funções e fazer 2 redações..."
+        ></textarea>
+      </div>
+
+      <div>
+        <label for="prompt-output" class="field-label">Comando gerado</label>
+        <textarea id="prompt-output" class="textarea-field" rows="6" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <span class="preview-sub">Gera JSON limpo com dia, matéria e horas estimadas.</span>
+      <div class="dialog-actions">
+        <form method="dialog">
+          <button type="submit" class="btn btn-ghost">Fechar</button>
+        </form>
+        <button type="button" id="btn-copy-prompt" class="btn btn-primary">
+          Copiar Prompt
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
